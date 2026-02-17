@@ -422,16 +422,16 @@ jobs:
           aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-setup.exe \
             s3://${S3_BUCKET}/${PREFIX}/windows/latest-setup.exe
 
-          # Linux
-          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x64.deb \
-            s3://${S3_BUCKET}/${PREFIX}/linux/CompAI-Device-Agent-${VERSION}-x64.deb
-          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x64.deb \
-            s3://${S3_BUCKET}/${PREFIX}/linux/latest-x64.deb
+          # Linux (.deb uses amd64, .AppImage uses x86_64 architecture naming)
+          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-amd64.deb \
+            s3://${S3_BUCKET}/${PREFIX}/linux/CompAI-Device-Agent-${VERSION}-amd64.deb
+          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-amd64.deb \
+            s3://${S3_BUCKET}/${PREFIX}/linux/latest-amd64.deb
 
-          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x64.AppImage \
-            s3://${S3_BUCKET}/${PREFIX}/linux/CompAI-Device-Agent-${VERSION}-x64.AppImage
-          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x64.AppImage \
-            s3://${S3_BUCKET}/${PREFIX}/linux/latest-x64.AppImage
+          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x86_64.AppImage \
+            s3://${S3_BUCKET}/${PREFIX}/linux/CompAI-Device-Agent-${VERSION}-x86_64.AppImage
+          aws s3 cp artifacts/CompAI-Device-Agent-${VERSION}-x86_64.AppImage \
+            s3://${S3_BUCKET}/${PREFIX}/linux/latest-x86_64.AppImage
 
       - name: Upload auto-update files to S3
         env:
