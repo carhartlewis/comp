@@ -1,3 +1,11 @@
+## [1.83.6](https://github.com/trycompai/comp/compare/v1.83.5...v1.83.6) (2026-02-18)
+
+
+### Bug Fixes
+
+* **app:** fix Cancel Invitation dropdown not opening dialog ([#2165](https://github.com/trycompai/comp/issues/2165)) ([78beb4e](https://github.com/trycompai/comp/commit/78beb4e39e58737521688ebc33f5b73474fde713))
+* **app:** restore category selection when navigating back from task details page ([#2164](https://github.com/trycompai/comp/issues/2164)) ([3b1b99b](https://github.com/trycompai/comp/commit/3b1b99b43e471e9cdc5da57fa2f713d46ee5c2ec))
+
 ## [1.83.5](https://github.com/trycompai/comp/compare/v1.83.4...v1.83.5) (2026-02-18)
 
 
