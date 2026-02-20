@@ -1,6 +1,10 @@
 import { AttachmentsService } from '@/attachments/attachments.service';
 import type { AuthContext } from '@/auth/types';
-import { db, type EvidenceFormType as DbEvidenceFormType } from '@trycompai/db';
+import { db, EvidenceFormType as DbEvidenceFormType } from '@trycompai/db';
+import {
+  toDbEvidenceFormType,
+  toExternalEvidenceFormType,
+} from '@comp/company';
 import {
   BadRequestException,
   Injectable,
@@ -16,10 +20,6 @@ import {
   type EvidenceFormFieldDefinition,
   type EvidenceFormType,
 } from './evidence-forms.definitions';
-import {
-  toDbEvidenceFormType,
-  toExternalEvidenceFormType,
-} from './evidence-form-type-map';
 
 const listQuerySchema = z.object({
   search: z.string().trim().optional(),
