@@ -1,3 +1,15 @@
+# [1.84.0](https://github.com/trycompai/comp/compare/v1.83.7...v1.84.0) (2026-02-20)
+
+
+### Bug Fixes
+
+* resolve device agent sign-in loop and improve auth robustness ([#2177](https://github.com/trycompai/comp/issues/2177)) ([7de133f](https://github.com/trycompai/comp/commit/7de133f9feb862e03563c520f76e5ad6ed04dca4))
+
+
+### Features
+
+* **cloud-security:** add endpoints to trigger scans and get run status ([#2176](https://github.com/trycompai/comp/issues/2176)) ([4f1e87a](https://github.com/trycompai/comp/commit/4f1e87a4fb01af415b76daabd96732691dbebfb2))
+
 ## [1.83.7](https://github.com/trycompai/comp/compare/v1.83.6...v1.83.7) (2026-02-19)
 
 
