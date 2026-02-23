@@ -1,3 +1,10 @@
+## [1.85.1](https://github.com/trycompai/comp/compare/v1.85.0...v1.85.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* **sync:** prevent privileged member auto-deactivation in GW and JumpCloud ([#2184](https://github.com/trycompai/comp/issues/2184)) ([00d26f6](https://github.com/trycompai/comp/commit/00d26f6b9a6054ac495f49048b197cb66a92894e))
+
 # [1.85.0](https://github.com/trycompai/comp/compare/v1.84.0...v1.85.0) (2026-02-23)
 
 
