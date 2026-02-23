@@ -20,7 +20,7 @@ import { Label } from '@comp/ui/label';
 import MultipleSelector from '@comp/ui/multiple-selector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@comp/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@comp/ui/tabs';
-import { Key, Loader2, Settings, Trash2, Unplug, X } from 'lucide-react';
+import { Key, Loader2, Settings, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -120,6 +120,27 @@ const validateTargetRepos = (
   return true;
 };
 
+const normalizeMultiSelectValue = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(value.map((item) => String(item).trim()).filter((item) => item.length > 0)),
+    );
+  }
+
+  if (typeof value === 'string') {
+    return Array.from(
+      new Set(
+        value
+          .split(/[\n,;]+/)
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0),
+      ),
+    );
+  }
+
+  return [];
+};
+
 export function ManageIntegrationDialog({
   open,
   onOpenChange,
@@ -150,9 +171,7 @@ export function ManageIntegrationDialog({
 
   // Credentials state (for custom auth integrations)
   const [credentialFields, setCredentialFields] = useState<CredentialField[]>([]);
-  const [credentialValues, setCredentialValues] = useState<
-    Record<string, string | string[]>
-  >({});
+  const [credentialValues, setCredentialValues] = useState<Record<string, string | string[]>>({});
   const [savingCredentials, setSavingCredentials] = useState(false);
   const [authStrategy, setAuthStrategy] = useState<string>('');
 
@@ -202,7 +221,11 @@ export function ManageIntegrationDialog({
         const values: Record<string, string | number | boolean | string[]> = {};
         for (const v of vars) {
           if (v.currentValue !== undefined) {
-            values[v.id] = v.currentValue;
+            if (v.type === 'multi-select') {
+              values[v.id] = normalizeMultiSelectValue(v.currentValue);
+            } else {
+              values[v.id] = v.currentValue;
+            }
           }
         }
         setVariableValues(values);
@@ -483,10 +506,35 @@ function ConfigurationContent({
     );
   }
 
+  const syncModeVariable = variables.find((variable) => variable.id === 'sync_user_filter_mode');
+  const rawSyncMode = variableValues.sync_user_filter_mode ?? syncModeVariable?.default ?? 'all';
+  const effectiveSyncMode = String(rawSyncMode).toLowerCase();
+  const hasSyncScopedFields = variables.some(
+    (variable) => variable.id === 'sync_excluded_emails' || variable.id === 'sync_included_emails',
+  );
+
+  const shouldShowVariable = (variable: CheckVariable): boolean => {
+    if (variable.id === 'sync_excluded_emails') {
+      return effectiveSyncMode === 'exclude';
+    }
+
+    if (variable.id === 'sync_included_emails') {
+      return effectiveSyncMode === 'include';
+    }
+
+    return true;
+  };
+
   const variablesContent = hasVariables && (
     <div className="space-y-4">
       {!showTabs && <h4 className="text-sm font-medium">Configuration</h4>}
-      {variables.map((variable) => {
+      {hasSyncScopedFields && effectiveSyncMode === 'all' && (
+        <p className="text-xs text-muted-foreground">
+          Employee sync is set to all users. Include and exclude fields are hidden because they are
+          not used in this mode.
+        </p>
+      )}
+      {variables.filter(shouldShowVariable).map((variable) => {
         const options = dynamicOptions[variable.id] || variable.options || [];
         const isLoadingOptions = loadingDynamicOptions[variable.id];
 
@@ -719,16 +767,16 @@ function ConfigurationContent({
                     setCredentialValues((prev) => ({ ...prev, [field.id]: val }))
                   }
                 >
-              <SelectTrigger>
-                <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {field.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                  <SelectTrigger>
+                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               );
             })()
@@ -896,11 +944,14 @@ function MultiSelectWithBranches({
   onLoadOptions: () => void;
 }) {
   const selectedValues = Array.isArray(value) ? value : [];
+  const normalizedSelectedValues = selectedValues
+    .map((item) => String(item).trim())
+    .filter((item) => item.length > 0);
   const hasLoadedRef = useRef(false);
 
   // For target_repos, parse values to extract repos and branches
   const isGitHubRepos = variable.id === 'target_repos';
-  const parsedConfigs = isGitHubRepos ? selectedValues.map(parseRepoBranch) : [];
+  const parsedConfigs = isGitHubRepos ? normalizedSelectedValues.map(parseRepoBranch) : [];
 
   useEffect(() => {
     if (
@@ -936,7 +987,7 @@ function MultiSelectWithBranches({
 
   // Handle branch change for a specific repo
   const handleBranchChange = (repo: string, branch: string) => {
-    const newValues = selectedValues.map((v) => {
+    const newValues = normalizedSelectedValues.map((v) => {
       const parsed = parseRepoBranch(v);
       if (parsed.repo === repo) {
         // Allow empty string during editing - will default to main on save if empty
@@ -949,12 +1000,15 @@ function MultiSelectWithBranches({
 
   // Handle removing a repo
   const handleRemoveRepo = (repo: string) => {
-    const newValues = selectedValues.filter((v) => parseRepoBranch(v).repo !== repo);
+    const newValues = normalizedSelectedValues.filter((v) => parseRepoBranch(v).repo !== repo);
     onChange(newValues);
   };
 
   // Get repos from values for display in multi-select
-  const reposForSelector = isGitHubRepos ? parsedConfigs.map((c) => c.repo) : selectedValues;
+  const reposForSelector = isGitHubRepos
+    ? parsedConfigs.map((c) => c.repo)
+    : normalizedSelectedValues;
+  const isCreatable = isGitHubRepos || options.length === 0;
 
   return (
     <div className="space-y-3">
@@ -966,14 +1020,18 @@ function MultiSelectWithBranches({
         onChange={(selected) => handleRepoSelectionChange(selected.map((s) => s.value))}
         defaultOptions={options.map((o) => ({ value: o.value, label: o.label }))}
         options={options.map((o) => ({ value: o.value, label: o.label }))}
-        placeholder={`Select ${variable.label.toLowerCase()}...`}
-        creatable={isGitHubRepos}
+        placeholder={variable.placeholder || `Select ${variable.label.toLowerCase()}...`}
+        creatable={isCreatable}
         emptyIndicator={
           isLoadingOptions ? (
             <div className="flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               Loading options...
             </div>
+          ) : isCreatable ? (
+            <p className="text-center text-sm text-muted-foreground">
+              Type a value and press Enter
+            </p>
           ) : (
             <p className="text-center text-sm text-muted-foreground">No options available</p>
           )
