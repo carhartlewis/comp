@@ -1,3 +1,10 @@
+# [1.85.0](https://github.com/trycompai/comp/compare/v1.84.0...v1.85.0) (2026-02-23)
+
+
+### Features
+
+* **sync:** add Google Workspace inbox filtering for employee sync ([#2180](https://github.com/trycompai/comp/issues/2180)) ([dc484d8](https://github.com/trycompai/comp/commit/dc484d8ffeb80362b381f88cf38f87e1d8d62232))
+
 # [1.84.0](https://github.com/trycompai/comp/compare/v1.83.7...v1.84.0) (2026-02-20)
 
 
