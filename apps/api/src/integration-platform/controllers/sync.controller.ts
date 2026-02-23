@@ -478,9 +478,21 @@ export class SyncController {
     for (const member of allOrgMembers) {
       const memberEmail = member.user.email.toLowerCase();
       const memberDomain = memberEmail.split('@')[1];
+      const memberRoles = member.role
+        .split(',')
+        .map((role) => role.trim().toLowerCase());
 
       // Only check members whose email domain matches the Google Workspace domain
       if (!memberDomain || !deactivationGwDomains.has(memberDomain)) {
+        continue;
+      }
+
+      // Safety guard: never auto-deactivate privileged members via sync.
+      if (
+        memberRoles.includes('owner') ||
+        memberRoles.includes('admin') ||
+        memberRoles.includes('auditor')
+      ) {
         continue;
       }
 
@@ -1509,6 +1521,25 @@ export class SyncController {
       );
     }
 
+    const syncVariables = (connection.variables || {}) as Record<
+      string,
+      unknown
+    >;
+    const excludedTerms = parseSyncFilterTerms(
+      syncVariables.sync_excluded_emails,
+    );
+    const filteredUsers =
+      excludedTerms.length === 0
+        ? users
+        : users.filter(
+            (user) =>
+              !matchesSyncFilterTerms(user.email.toLowerCase(), excludedTerms),
+          );
+
+    this.logger.log(
+      `JumpCloud sync excluded filter kept ${filteredUsers.length}/${users.length} users`,
+    );
+
     // Fetch all systems from JumpCloud
     const systems: JumpCloudSystem[] = [];
     try {
@@ -1561,7 +1592,7 @@ export class SyncController {
     // Fetch user-to-system bindings for each user
     const userDevices = new Map<string, JumpCloudSystem[]>();
 
-    for (const user of users) {
+    for (const user of filteredUsers) {
       try {
         const bindingsUrl = new URL(
           `https://console.jumpcloud.com/api/v2/users/${user._id}/systems`,
@@ -1600,18 +1631,27 @@ export class SyncController {
     };
 
     // Filter to active users (exclude staged and suspended)
-    const activeUsers = users.filter(
+    const allActiveUsers = users.filter(
       (u) => u.state === 'ACTIVATED' && u.activated && !u.suspended,
     );
+    const activeUsers =
+      excludedTerms.length === 0
+        ? allActiveUsers
+        : allActiveUsers.filter(
+            (user) =>
+              !matchesSyncFilterTerms(user.email.toLowerCase(), excludedTerms),
+          );
     const suspendedEmails = new Set(
       users
         .filter((u) => u.suspended || u.state === 'SUSPENDED')
         .map((u) => u.email.toLowerCase()),
     );
-    const activeEmails = new Set(activeUsers.map((u) => u.email.toLowerCase()));
+    const activeEmails = new Set(
+      allActiveUsers.map((u) => u.email.toLowerCase()),
+    );
 
     this.logger.log(
-      `Found ${activeUsers.length} active users and ${suspendedEmails.size} suspended users in JumpCloud`,
+      `Found ${activeUsers.length} active users to sync (${allActiveUsers.length} total active before exclusions) and ${suspendedEmails.size} suspended users in JumpCloud`,
     );
 
     // Import users into the organization
@@ -1765,9 +1805,22 @@ export class SyncController {
     for (const member of allOrgMembers) {
       const memberEmail = member.user.email.toLowerCase();
       const memberDomain = memberEmail.split('@')[1];
+      const memberRoles = member.role
+        .split(',')
+        .map((role) => role.trim().toLowerCase());
 
       // Only check members whose email domain matches the JumpCloud domain
       if (!memberDomain || !jcDomains.has(memberDomain)) {
+        continue;
+      }
+
+      // Safety guard: never auto-deactivate privileged members via sync.
+      // This prevents org lockouts when identity data is partial/misaligned.
+      if (
+        memberRoles.includes('owner') ||
+        memberRoles.includes('admin') ||
+        memberRoles.includes('auditor')
+      ) {
         continue;
       }
 
