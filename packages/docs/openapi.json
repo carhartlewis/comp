@@ -16268,6 +16268,45 @@
         ]
       }
     },
+    "/v1/evidence-forms/{formType}/upload-submission": {
+      "post": {
+        "description": "Upload a PDF or image file and create a submission for the given form type, bypassing form-specific validation",
+        "operationId": "EvidenceFormsController_uploadSubmission_v1",
+        "parameters": [
+          {
+            "name": "X-Organization-Id",
+            "in": "header",
+            "description": "Organization ID (required for session auth, optional for API key auth)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Upload a file as an evidence submission",
+        "tags": [
+          "Evidence Forms"
+        ]
+      }
+    },
     "/v1/evidence-forms/{formType}/submissions/{submissionId}/review": {
       "patch": {
         "description": "Approve or reject an evidence form submission with an optional reason",
